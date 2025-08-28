@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>哈基米 & 钢琴 双功能切换</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    // 区分两个功能的主题色，避免冲突
+                    colors: {
+                        // 哈基米主题色
+                        'hachi-primary': '#FF6B8B',
+                        'hachi-secondary': '#6B9FFF',
+                        'hachi-neutral': '#F5F5F5',
+                        // 钢琴主题色
+                        'piano-primary': '#165DFF',
+                        'piano-secondary': '#FF7D00',
+                        'piano-dark': '#1E293B',
+                        'piano-light': '#F8FAFC',
+                    },
+                    fontFamily: {
+                        sans: ['Nunito', 'system-ui', 'sans-serif'],
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            /* 哈基米相关工具类 */
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            }
+            .bounce-custom {
+                animation: bounce 0.6s ease infinite alternate;
+            }
+            @keyframes bounce {
+                from { transform: translateY(0); }
+                to { transform: translateY(-10px); }
+            }
+            .float-effect {
+                animation: float 3s ease-in-out infinite;
+            }
+            @keyframes float {
+                0% { transform: translateY(0px); }
+                50% { transform: translateY(-15px); }
+                100% { transform: translateY(0px); }
+            }
+
+            /* 钢琴相关工具类 */
+            .key-shadow {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), inset 0 -4px 0 0 rgba(0, 0, 0, 0.1);
+            }
+            .key-shadow-active {
+                box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1), inset 0 -2px 0 0 rgba(0, 0, 0, 0.1);
+            }
+            .black-key-shadow {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1), inset 0 -2px 0 0 rgba(255, 255, 255, 0.1);
+            }
+            .black-key-shadow-active {
+                box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.2), inset 0 -1px 0 0 rgba(255, 255, 255, 0.1);
+            }
+
+            /* 切换相关工具类 */
+            .tab-content {
+                display: none;
+                transition: all 0.3s ease;
+            }
+            .tab-content.active {
+                display: block;
+            }
+            .tab-btn.active {
+                background-color: theme('colors.piano-primary');
+                color: white;
+                transform: scale(1.02);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen font-sans flex flex-col items-center justify-center p-4">
+    <div class="w-full max-w-5xl">
+        <!-- 顶部切换栏 -->
+        <div class="flex justify-center gap-4 mb-8">
+            <button id="hachiTab" class="tab-btn active bg-white hover:bg-piano-primary/10 text-gray-800 font-bold py-3 px-8 rounded-xl transition-all duration-300 shadow-md flex items-center gap-2">
+                <i class="fa fa-paw text-hachi-primary"></i>
+                哈基米互动
+            </button>
+            <button id="pianoTab" class="tab-btn bg-white hover:bg-piano-primary/10 text-gray-800 font-bold py-3 px-8 rounded-xl transition-all duration-300 shadow-md flex items-center gap-2">
+                <i class="fa fa-music text-piano-primary"></i>
+                钢琴演奏
+            </button>
+        </div>
+
+        <!-- 哈基米内容区（默认显示） -->
+        <div id="hachiContent" class="tab-content active">
+            <header class="text-center mb-8">
+                <h1 class="text-[clamp(2rem,5vw,3.5rem)] font-bold text-transparent bg-clip-text bg-gradient-to-r from-hachi-primary to-hachi-secondary mb-2 text-shadow">
+                    哈基米哈气
+                </h1>
+            </header>
+            
+            <div class="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden transform transition-all duration-300 hover:shadow-2xl mx-auto">
+                <!-- 哈基米图片区域 -->
+                <div class="relative h-64 bg-hachi-neutral flex items-center justify-center overflow-hidden">
+                    <img id="catImage" src="https://imgs.qiubiaoqing.com/qiubiaoqing/imgs/6817ae5f1e183xax.gif" alt="可爱的猫咪" class="w-full h-full object-cover transition-all duration-500">
+                    <!-- 哈气效果容器 -->
+                    <div id="hachiEffect" class="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-500 pointer-events-none">
+                        <div class="text-[clamp(3rem,10vw,5rem)] font-extrabold text-white text-shadow float-effect">
+                            哈！
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 哈基米按钮区域 -->
+                <div class="p-6 grid grid-cols-2 gap-4">
+                    <button id="petButton" class="bg-hachi-primary hover:bg-hachi-primary/90 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-hachi-primary/30 flex items-center justify-center">
+                        <i class="fa fa-hand-paper-o mr-2"></i> 摸头
+                    </button>
+                    <button id="noPetButton" class="bg-hachi-secondary hover:bg-hachi-secondary/90 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-hachi-secondary/30 flex items-center justify-center">
+                        <i class="fa fa-hand-stop-o mr-2"></i> 不摸
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 哈基米说明文字 -->
+            <p class="mt-6 text-gray-600 text-center max-w-md mx-auto">
+                点击"摸头"按钮，看看哈基米会有什么反应～
+            </p>
+        </div>
+
+        <!-- 钢琴内容区（默认隐藏） -->
+        <div id="pianoContent" class="tab-content">
+            <header class="text-center mb-8">
+                <h1 class="text-[clamp(1.8rem,5vw,2.5rem)] font-bold text-piano-dark mb-2">刘致远的钢琴网站</h1>
+                <p class="text-gray-600 text-lg">点击琴键演奏音乐，感受音符的魅力</p>
+            </header>
+            
+            <main class="bg-white rounded-2xl shadow-xl p-6 md:p-8">
+                <div class="relative w-full aspect-[16/5] max-w-4xl mx-auto">
+                    <!-- 钢琴键盘容器 -->
+                    <div id="keyboard" class="relative w-full h-full flex rounded-lg overflow-hidden shadow-lg">
+                        <!-- 琴键将通过JavaScript动态生成 -->
+                    </div>
+                    
+                    <!-- 钢琴音符显示 -->
+                    <div id="note-display" class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-4 bg-piano-primary text-white px-6 py-3 rounded-lg shadow-lg text-xl font-semibold transition-all duration-300 opacity-0">
+                        <span id="note-name">C</span>
+                    </div>
+                </div>
+                
+                <!-- 钢琴说明文字 -->
+                <div class="mt-8 text-center">
+                    <div class="inline-flex items-center gap-4 bg-gray-100 rounded-xl p-4">
+                        <i class="fa fa-info-circle text-piano-primary text-xl"></i>
+                        <p class="text-gray-700">点击琴键演奏对应的音符，白色琴键为自然音，黑色琴键为半音</p>
+                    </div>
+                </div>
+            </main>
+            
+            <!-- 钢琴页脚 -->
+            <footer class="mt-8 text-center text-gray-500 text-sm">
+                <p>🎹 刘致远的钢琴网站 | 享受音乐的乐趣</p>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // -------------------------- 切换功能逻辑 --------------------------
+        const hachiTab = document.getElementById('hachiTab');
+        const pianoTab = document.getElementById('pianoTab');
+        const hachiContent = document.getElementById('hachiContent');
+        const pianoContent = document.getElementById('pianoContent');
+
+        // 切换到哈基米模式
+        hachiTab.addEventListener('click', () => {
+            hachiTab.classList.add('active');
+            pianoTab.classList.remove('active');
+            hachiContent.classList.add('active');
+            pianoContent.classList.remove('active');
+            document.title = '哈基米互动 - 双功能切换';
+        });
+
+        // 切换到钢琴模式
+        pianoTab.addEventListener('click', () => {
+            pianoTab.classList.add('active');
+            hachiTab.classList.remove('active');
+            pianoContent.classList.add('active');
+            hachiContent.classList.remove('active');
+            document.title = '钢琴演奏 - 双功能切换';
+            // 确保钢琴琴键已生成（首次切换时触发）
+            if (!document.querySelector('.white-key')) {
+                initPiano();
+            }
+        });
+
+        // -------------------------- 哈基米功能逻辑 --------------------------
+        // 获取哈基米DOM元素
+        const petButton = document.getElementById('petButton');
+        const noPetButton = document.getElementById('noPetButton');
+        const hachiEffect = document.getElementById('hachiEffect');
+        const catImage = document.getElementById('catImage');
+        
+        // 哈基米图片资源
+        const defaultCat = "https://picsum.photos/id/40/600/400";
+        const happyCat = "https://picsum.photos/id/1074/600/400";
+        
+        // 摸头按钮事件
+        petButton.addEventListener('click', () => {
+            hachiEffect.style.opacity = '1';
+            catImage.src = happyCat;
+            petButton.classList.add('bounce-custom');
+            
+            setTimeout(() => {
+                hachiEffect.style.opacity = '0';
+                petButton.classList.remove('bounce-custom');
+            }, 2000);
+        });
+        
+        // 不摸按钮事件
+        noPetButton.addEventListener('click', () => {
+            hachiEffect.style.opacity = '0';
+            catImage.src = defaultCat;
+            noPetButton.classList.add('bounce-custom');
+            
+            setTimeout(() => {
+                noPetButton.classList.remove('bounce-custom');
+            }, 500);
+        });
+
+        // -------------------------- 钢琴功能逻辑 --------------------------
+        let audioContext; // 音频上下文（全局避免重复创建）
+
+        function initPiano() {
+            // 钢琴音符配置（含半音）
+            const notes = [
+                { name: 'C', frequency: 261.63, type: 'white' },
+                { name: 'C#', frequency: 277.18, type: 'black' },
+                { name: 'D', frequency: 293.66, type: 'white' },
+                { name: 'D#', frequency: 311.13, type: 'black' },
+                { name: 'E', frequency: 329.63, type: 'white' },
+                { name: 'F', frequency: 349.23, type: 'white' },
+                { name: 'F#', frequency: 369.99, type: 'black' },
+                { name: 'G', frequency: 392.00, type: 'white' },
+                { name: 'G#', frequency: 415.30, type: 'black' },
+                { name: 'A', frequency: 440.00, type: 'white' },
+                { name: 'A#', frequency: 466.16, type: 'black' },
+                { name: 'B', frequency: 493.88, type: 'white' },
+                { name: 'C1', frequency: 523.25, type: 'white' },
+                { name: 'C#1', frequency: 554.37, type: 'black' },
+                { name: 'D1', frequency: 587.33, type: 'white' },
+                { name: 'D#1', frequency: 622.25, type: 'black' },
+                { name: 'E1', frequency: 659.25, type: 'white' },
+                { name: 'F1', frequency: 698.46, type: 'white' },
+                { name: 'F#1', frequency: 739.99, type: 'black' },
+                { name: 'G1', frequency: 783.99, type: 'white' },
+                { name: 'G#1', frequency: 830.61, type: 'black' },
+                { name: 'A1', frequency: 880.00, type: 'white' },
+                { name: 'A#1', frequency: 932.33, type: 'black' },
+                { name: 'B1', frequency: 987.77, type: 'white' },
+                { name: 'C2', frequency: 1046.50, type: 'white' }
+            ];
+            
+            const keyboard = document.getElementById('keyboard');
+            const noteDisplay = document.getElementById('note-display');
+            const noteName = document.getElementById('note-name');
+            
+            // 计算白色琴键宽度
+            const whiteKeys = notes.filter(note => note.type === 'white');
+            const whiteKeyWidth = 100 / whiteKeys.length;
+            let whiteKeyIndex = 0;
+            
+            // 动态生成琴键
+            notes.forEach(note => {
+                const key = document.createElement('div');
+                
+                if (note.type === 'white') {
+                    // 白色琴键
+                    key.className = 'white-key relative bg-white border-r border-gray-300 cursor-pointer transition-all duration-150 key-shadow flex flex-col items-center justify-end pb-4';
+                    key.style.width = `${whiteKeyWidth}%`;
+                    key.innerHTML = `
+                        <span class="text-lg font-semibold text-gray-800">${note.name}</span>
+                        <span class="text-xs text-gray-500 mt-1">${note.frequency.toFixed(2)}Hz</span>
+                    `;
+                    whiteKeyIndex++;
+                } else {
+                    // 黑色琴键（悬浮在白色琴键上方）
+                    key.className = 'black-key absolute bg-piano-dark text-white cursor-pointer transition-all duration-150 black-key-shadow flex flex-col items-center justify-end pb-2 z-10';
+                    key.style.width = '6%';
+                    key.style.height = '65%';
+                    key.style.left = `${(whiteKeyIndex - 0.5) * whiteKeyWidth}%`;
+                    key.innerHTML = `<span class="text-sm font-medium">${note.name}</span>`;
+                }
+                
+                // 绑定琴键数据
+                key.dataset.note = note.name;
+                key.dataset.frequency = note.frequency;
+                key.dataset.type = note.type;
+                
+                // 琴键交互事件
+                key.addEventListener('mousedown', () => playNote(key));
+                key.addEventListener('mouseup', () => releaseNote(key));
+                key.addEventListener('mouseleave', () => releaseNote(key));
+                
+                keyboard.appendChild(key);
+            });
+        }
+
+        // 钢琴音符播放（方波音色）
+        function playNote(key) {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            const note = key.dataset.note;
+            const frequency = parseFloat(key.dataset.frequency);
+            const type = key.dataset.type;
+            
+            // 显示当前音符
+            document.getElementById('note-name').textContent = note;
+            const noteDisplay = document.getElementById('note-display');
+            noteDisplay.style.opacity = '1';
+            noteDisplay.style.transform = 'translate(-50%, -10px)';
+            
+            // 琴键按下样式
+            if (type === 'white') {
+                key.classList.remove('key-shadow');
+                key.classList.add('key-shadow-active', 'bg-gray-100');
+            } else {
+                key.classList.remove('black-key-shadow');
+                key.classList.add('black-key-shadow-active', 'bg-gray-800');
+            }
+            
+            // 创建音频节点（方波振荡器，音色更洪亮）
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            
+            // 音量包络（自然淡入淡出）
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.03);
+            gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.1);
+            gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 1.5);
+            
+            // 连接音频链路
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // 播放音符
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 1.5);
+            
+            // 存储音频节点（用于释放时控制）
+            key.currentOscillator = oscillator;
+            key.currentGainNode = gainNode;
+        }
+
+        // 钢琴琴键释放
+        function releaseNote(key) {
+            const type = key.dataset.type;
+            // 恢复琴键样式
+            if (type === 'white') {
+                key.classList.remove('key-shadow-active', 'bg-gray-100');
+                key.classList.add('key-shadow');
+            } else {
+                key.classList.remove('black-key-shadow-active', 'bg-gray-800');
+                key.classList.add('black-key-shadow');
+            }
+            
+            // 提前淡出音符
+            if (key.currentGainNode) {
+                const currentTime = audioContext.currentTime;
+                key.currentGainNode.gain.cancelScheduledValues(currentTime);
+                key.currentGainNode.gain.linearRampToValueAtTime(0, currentTime + 0.3);
+            }
+            
+            // 隐藏音符显示
+            setTimeout(() => {
+                const noteDisplay = document.getElementById('note-display');
+                noteDisplay.style.opacity = '0';
+                noteDisplay.style.transform = 'translate(-50%, 0)';
+            }, 300);
+        }
+
+        // 页面加载时初始化哈基米（钢琴首次切换时初始化）
+        document.addEventListener('DOMContentLoaded', () => {
+            document.title = '哈基米互动 - 双功能切换';
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
